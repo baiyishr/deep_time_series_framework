@@ -6,17 +6,6 @@ import pytorch_lightning as pl
 import json
 
 
-class MyDataset(TorchDataset):
-    def __init__(self, data):
-        self.data = data
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        return self.data[idx]
-
-
 class DataModule(pl.LightningDataModule):
     def __init__(self, config_file: str):
         super().__init__()
