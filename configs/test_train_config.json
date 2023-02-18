@@ -1,0 +1,27 @@
+{
+    "data": {
+        "data": "csv",
+        "data_params": {
+            "batch_size": 32,
+            "train_path": "",
+            "val_path": "",
+            "test_path": ""
+        }
+    },
+    "model": {
+        "model_name": "custom_rnn",
+        "model_params": {
+            "num_labels": 2,
+            "lr": 2e-5,
+            "batch_size": 32
+        },
+        "loss_fn_type": "mse",
+        "loss_params": {}
+    },
+    "train": {
+        "accelerator": "auto",
+        "devices": 4,
+        "strategy": "ddp",
+        "max_epochs": 1
+    }
+}

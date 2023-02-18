@@ -1,19 +1,20 @@
 import torch
 import torch.nn as nn
 import sys
-from .model import CustomRNN
-from .model import TSTModel
+from models.custom_rnn import CustomRNN
+from models.time_series_transformer import TSTModel
+import pytorch_lightning as pl
 
 
-class DTSModel(nn.Module):
-    def __init__(self, model_type, model_params, loss_fn_type, loss_fn_params):
+class DTSModel(pl.LightningModule):
+    def __init__(self, config):
         super().__init__()
 
-        self.model_type = model_type
+        self.model_name = config.model_name
         self.model_params = model_params
 
-        self.loss_fn_type = loss_fn_type
-        self.loss_fn_params = loss_fn_params
+        self.loss_fn_type = config.loss_fn_type
+        self.loss_fn_params = config.loss_params
 
         self.model = self.get_model()
         self.loss_fn = self.get_loss_fn()
