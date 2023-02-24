@@ -1,9 +1,9 @@
 import mysql.connector
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
+from pytorch_lightning import LightningDataModule
 
-
-class SqlDataModule:
+class SqlDataModule(LightningDataModule):
     def __init__(self, config):
         self.config = config
 

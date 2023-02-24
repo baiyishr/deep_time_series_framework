@@ -1,69 +1,62 @@
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
-from torch.utils.data.dataset import random_split
-from torch.utils.data.sampler import SubsetRandomSampler
-from torchvision.transforms import Compose
+from pytorch_lightning import LightningDataModule
 
 
-class CsvDataModule:
+class CsvDataModule(LightningDataModule):
     def __init__(self, config):
         self.config = config
-
-    def setup(self, stage=None):
-        # Load data from CSV files
-        self.train_data = pd.read_csv(self.config["train_csv_file"])
-        self.val_data = pd.read_csv(self.config["val_csv_file"])
-        self.test_data = pd.read_csv(self.config["test_csv_file"])
+        self.train_data = pd.read_csv(self.config["train_path"]).values
+        self.val_data = pd.read_csv(self.config["val_path"]).values
+        self.test_data = pd.read_csv(self.config["test_path"]).values
 
         # Define data transforms
-        self.transform = Compose([])
+        self.transform = None
 
     def train_dataloader(self):
         # Create PyTorch dataset for training data
         train_dataset = CsvDataset(
-            self.train_data, self.config["features"], self.config["target"], self.transform)
-
-        # Split training data into train and validation sets
-        train_size = int(len(train_dataset) * self.config["train_val_split"])
-        val_size = len(train_dataset) - train_size
-        train_set, val_set = random_split(
-            train_dataset, [train_size, val_size])
+            self.train_data, self.config["seq_len"], self.config["tgt_len"])
 
         # Create PyTorch dataloader for training data
-        train_loader = DataLoader(
-            train_set, batch_size=self.config["batch_size"], shuffle=True)
+        return DataLoader(
+            train_dataset, batch_size=self.config["batch_size"], shuffle=False)
 
-        # Create PyTorch dataloader for validation data
-        val_loader = DataLoader(
-            val_set, batch_size=self.config["batch_size"], shuffle=False, sampler=SubsetRandomSampler(range(val_size)))
+    def val_dataloader(self):
+        # Create PyTorch dataset for val data
+        val_dataset = CsvDataset(
+            self.val_data, self.config["seq_len"], self.config["tgt_len"])
 
-        return {"train": train_loader, "val": val_loader}
+        # Create PyTorch dataloader for test data
+        return DataLoader(
+            val_dataset, batch_size=self.config["batch_size"], shuffle=False)
 
     def test_dataloader(self):
         # Create PyTorch dataset for test data
         test_dataset = CsvDataset(
-            self.test_data, self.config["features"], self.config["target"], self.transform)
+            self.test_data, self.config["seq_len"], self.config["tgt_len"])
 
         # Create PyTorch dataloader for test data
-        test_loader = DataLoader(
+        return DataLoader(
             test_dataset, batch_size=self.config["batch_size"], shuffle=False)
-
-        return test_loader
 
 
 class CsvDataset(Dataset):
-    def __init__(self, data, features, target, transform=None):
+    def __init__(self, data, seq_len, tgt_len, transform=None):
         self.data = data
-        self.features = features
-        self.target = target
+        self.seq_len = seq_len
+        self.tgt_len = tgt_len
         self.transform = transform
 
     def __len__(self):
-        return len(self.data)
+        return len(self.data) - self.seq_len
 
     def __getitem__(self, idx):
-        x = self.data.loc[idx, self.features]
-        y = self.data.loc[idx, self.target]
+        # [seq_len, num_features]
+        x = self.data[idx: idx+self.seq_len, 1:6].astype(float)
+        # [tgt_len, close price]
+        y = self.data[idx+self.seq_len: idx +
+                      self.seq_len+self.tgt_len, 4].astype(float)
 
         if self.transform:
             x = self.transform(x)

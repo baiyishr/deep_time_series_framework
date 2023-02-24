@@ -1,8 +1,15 @@
 
-## Deep Time Series Framework 
+## Deep Time Series Framework - Pytorch Lightning
 
-This is a Pytorch lightning framework for deep time-series models
+Deep time series framework based on Pytorch Lightning
 
-The purpose of the project:
-1. build a scalable framework to quickly test different variations of time-series models stock prices
-2. the trained model and inference flow will be integrated into an auto-trading system
+The purpose of the project is to build a scalable framework to quickly test different variations of transformer-based time-series models for stock price prediction. 
+
+
+## Todo
+
+- [x] build the skeleton of the framework with datamodule, model, loss functions and callbacks
+- [x] add CsvDataModule for loading train/val/test data into DataLoaders
+- [x] implement and test the custom_rnn model
+- [ ] implement and test a Deep transformer model based on this paper: Wu, N., Green, B., Ben, X., & O'Banion, S. (2020). Deep transformer models for time series forecasting: The influenza prevalence case. arXiv preprint arXiv:2001.08317
+- [ ] implement and test Google's Temporal Fusion Transform model based on this <a href="https://arxiv.org/pdf/1912.09363.pdf">paper</a>

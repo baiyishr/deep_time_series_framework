@@ -2,7 +2,7 @@ from pyhive import hive
 import pandas as pd
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
-
+from pytorch_lightning import LightningDataModule
 
 class HiveDataset(Dataset):
     def __init__(self, df):
@@ -18,7 +18,7 @@ class HiveDataset(Dataset):
         return features, target
 
 
-class HiveDataModule:
+class HiveDataModule(LightningDataModule):
     def __init__(self, config):
         self.config = config
 

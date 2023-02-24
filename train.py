@@ -3,17 +3,27 @@ import json
 import pytorch_lightning as pl
 from argparse import Namespace
 from model import DTSModel
-from datamodule import DataModule
+from datamodules.csvdatamodule import CsvDataModule
+from datamodules.hivedatamodule import HiveDataModule
+from datamodules.sqldatamodule import SqlDataModule
+from datamodules.s3datamodule import S3DataModule
 from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 
 
 def train(config):
     pl.seed_everything(42, workers=True)
-    logger = TensorBoardLogger('logs/', name=config.model.model_name)
+    logger = TensorBoardLogger('logs/', name=config.model['model_name'])
 
     # Create LightningDataModule
-    data_module = DataModule(**config.data)
+    if config.data['data'] == 'sql':
+        data_module = SqlDataModule(config.data['data_params'])
+    elif config.data['data'] == 'hive':
+        data_module = HiveDataModule(config.data['data_params'])
+    elif config.data['data'] == 's3':
+        data_module = S3DataModule(config.data['data_params'])
+    else:
+        data_module = CsvDataModule(config.data['data_params'])
 
     # Create LightningModule
     model = DTSModel(config.model)
@@ -26,14 +36,15 @@ def train(config):
         save_top_k=3,
         mode='min',
         save_last=True,
-        period=100  # Save checkpoint every 100 steps
+        every_n_epochs=1  # Save checkpoint every 100 steps
     )
 
     # Create Trainer
     trainer = pl.Trainer(
-        accelerator=config.train.accelerator,
-        devices=config.train.devices,
-        max_epochs=config.max_epochs,
+        accelerator=config.train['accelerator'],
+        devices=config.train['devices'],
+        strategy=config.train['strategy'],
+        max_epochs=config.train['max_epochs'],
         callbacks=[
             EarlyStopping(monitor='val_loss'),
             LearningRateMonitor(logging_interval='step'),
@@ -60,3 +71,10 @@ if __name__ == '__main__':
 
     # Train the model
     train(config)
+
+"""
+Command:
+
+python train.py --config test_train_config.json
+
+"""

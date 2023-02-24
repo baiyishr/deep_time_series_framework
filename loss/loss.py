@@ -1,9 +1,19 @@
 import torch.nn as nn
 
 
-def mse_loss(y_pred, y_true):
-    return nn.MSELoss()(y_pred, y_true)
+class MSE(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, preds, targets):
+        loss = nn.MSELoss()(preds, targets)
+        return loss
 
 
-def cross_entropy_loss(y_pred, y_true):
-    return nn.CrossEntropyLoss()(y_pred, y_true)
+class CrossEntropy(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, preds, targets):
+        loss = nn.CrossEntropyLoss()(preds, targets)
+        return loss

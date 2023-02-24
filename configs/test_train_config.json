@@ -2,16 +2,22 @@
     "data": {
         "data": "csv",
         "data_params": {
+            "num_feature": 5,
+            "seq_len": 30,
+            "tgt_len": 1,
             "batch_size": 32,
-            "train_path": "",
-            "val_path": "",
-            "test_path": ""
+            "train_path": "data/AAPL_train.csv",
+            "val_path": "data/AAPL_val.csv",
+            "test_path": "data/AAPL_test.csv"
         }
     },
     "model": {
         "model_name": "custom_rnn",
         "model_params": {
-            "num_labels": 2,
+            "input_size": 5,
+            "hidden_size": 32,
+            "output_size": 1,
+            "num_layers": 2,
             "lr": 2e-5,
             "batch_size": 32
         },
@@ -19,8 +25,8 @@
         "loss_params": {}
     },
     "train": {
-        "accelerator": "auto",
-        "devices": 4,
+        "accelerator": "cpu",
+        "devices": 1,
         "strategy": "ddp",
         "max_epochs": 1
     }
