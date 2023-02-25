@@ -6,8 +6,8 @@ class MSE(nn.Module):
         super().__init__()
 
     def forward(self, preds, targets):
-        loss = nn.MSELoss()(preds, targets)
-        return loss
+        loss = nn.MSELoss()(preds.float(), targets.float())
+        return loss.float()
 
 
 class CrossEntropy(nn.Module):
@@ -15,5 +15,5 @@ class CrossEntropy(nn.Module):
         super().__init__()
 
     def forward(self, preds, targets):
-        loss = nn.CrossEntropyLoss()(preds, targets)
-        return loss
+        loss = nn.CrossEntropyLoss()(preds.float(), targets.float())
+        return loss.float()

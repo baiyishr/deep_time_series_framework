@@ -1,7 +1,10 @@
+from typing import Optional
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
 from pytorch_lightning import LightningDataModule
-
+import numpy as np
+import torch
+from sklearn.preprocessing import StandardScaler,MinMaxScaler
 
 class CsvDataModule(LightningDataModule):
     def __init__(self, config):
@@ -13,40 +16,74 @@ class CsvDataModule(LightningDataModule):
         # Define data transforms
         self.transform = None
 
+        # normalization
+        self.input_scaler = StandardScaler() #MinMaxScaler(feature_range=(-1, 1))
+        self.input_scaler.fit(self.train_data[:, 1:6])
+        self.target_scaler = StandardScaler() #MinMaxScaler(feature_range=(-1, 1))
+        self.target_scaler.fit(self.train_data[:, 4].reshape(-1, 1))
+
+
     def train_dataloader(self):
         # Create PyTorch dataset for training data
         train_dataset = CsvDataset(
-            self.train_data, self.config["seq_len"], self.config["tgt_len"])
+            self.train_data, self.config["seq_len"], self.config["tgt_len"], 
+            self.input_normalize,self.target_normalize)
 
         # Create PyTorch dataloader for training data
         return DataLoader(
-            train_dataset, batch_size=self.config["batch_size"], shuffle=False)
+            train_dataset, batch_size=self.config["batch_size"], num_workers=4, shuffle=True)
 
     def val_dataloader(self):
         # Create PyTorch dataset for val data
         val_dataset = CsvDataset(
-            self.val_data, self.config["seq_len"], self.config["tgt_len"])
+            self.val_data, self.config["seq_len"], self.config["tgt_len"], 
+            self.input_normalize,self.target_normalize)
 
         # Create PyTorch dataloader for test data
         return DataLoader(
-            val_dataset, batch_size=self.config["batch_size"], shuffle=False)
+            val_dataset, batch_size=self.config["batch_size"], num_workers=4, shuffle=False)
 
     def test_dataloader(self):
         # Create PyTorch dataset for test data
         test_dataset = CsvDataset(
-            self.test_data, self.config["seq_len"], self.config["tgt_len"])
+            self.test_data, self.config["seq_len"], self.config["tgt_len"], 
+            self.input_normalize,self.target_normalize)
 
         # Create PyTorch dataloader for test data
         return DataLoader(
-            test_dataset, batch_size=self.config["batch_size"], shuffle=False)
+            test_dataset, batch_size=self.config["batch_size"], num_workers=4, shuffle=False)
+    
+    def _log_hyperparams(self, *args, **kwargs):
+        pass  # do nothing
+
+    def input_normalize(self, x):
+        # Normalize input data using fitted scaler
+        x_norm = self.input_scaler.transform(x.reshape(-1, x.shape[-1])).reshape(x.shape)
+        return x_norm
+
+    def target_normalize(self, x):
+        # Normalize input data using fitted scaler
+        x_norm = self.target_scaler.transform(x.reshape(-1, x.shape[-1])).reshape(x.shape)
+        return x_norm
+    
+    def input_denormalize(self, x_norm):
+        # Denormalize input data using fitted scaler
+        x = self.input_scaler.inverse_transform(x_norm.reshape(-1, x_norm.shape[-1])).reshape(x_norm.shape)
+        return x
+
+    def target_denormalize(self, x_norm):
+        # Denormalize input data using fitted scaler
+        x = self.target_scaler.inverse_transform(x_norm.reshape(-1, x_norm.shape[-1])).reshape(x_norm.shape)
+        return x
 
 
 class CsvDataset(Dataset):
-    def __init__(self, data, seq_len, tgt_len, transform=None):
+    def __init__(self, data, seq_len, tgt_len, input_transform=None, target_transform=None):
         self.data = data
         self.seq_len = seq_len
         self.tgt_len = tgt_len
-        self.transform = transform
+        self.input_transform = input_transform
+        self.target_transform = target_transform
 
     def __len__(self):
         return len(self.data) - self.seq_len
@@ -57,8 +94,12 @@ class CsvDataset(Dataset):
         # [tgt_len, close price]
         y = self.data[idx+self.seq_len: idx +
                       self.seq_len+self.tgt_len, 4].astype(float)
+        
 
-        if self.transform:
-            x = self.transform(x)
+        if self.input_transform:
+            x = self.input_transform(x)
+        if self.target_transform:
+            y = self.target_transform(y)
+        #y = y_[:, 3]
 
         return x, y

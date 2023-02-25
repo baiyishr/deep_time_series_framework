@@ -1,5 +1,6 @@
 import argparse
 import json
+import torch
 import pytorch_lightning as pl
 from argparse import Namespace
 from model import DTSModel
@@ -14,6 +15,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 def train(config):
     pl.seed_everything(42, workers=True)
     logger = TensorBoardLogger('logs/', name=config.model['model_name'])
+    device = torch.device('cuda') if config.train['accelerator']=='gpu' else torch.device('cpu')
 
     # Create LightningDataModule
     if config.data['data'] == 'sql':
@@ -26,7 +28,8 @@ def train(config):
         data_module = CsvDataModule(config.data['data_params'])
 
     # Create LightningModule
-    model = DTSModel(config.model)
+    model = DTSModel(config.model, device)
+    model.to(device)
 
     # Callback to save the model checkpoint
     checkpoint_callback = ModelCheckpoint(
