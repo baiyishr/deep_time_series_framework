@@ -10,7 +10,8 @@ from datamodules.sqldatamodule import SqlDataModule
 from datamodules.s3datamodule import S3DataModule
 from pytorch_lightning.callbacks import EarlyStopping, LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
-
+import importlib
+from utils import data_source_dictionary
 
 def train(config):
     pl.seed_everything(42, workers=True)
@@ -18,14 +19,9 @@ def train(config):
     device = torch.device('cuda') if config.train['accelerator']=='gpu' else torch.device('cpu')
 
     # Create LightningDataModule
-    if config.data['data'] == 'sql':
-        data_module = SqlDataModule(config.data['data_params'])
-    elif config.data['data'] == 'hive':
-        data_module = HiveDataModule(config.data['data_params'])
-    elif config.data['data'] == 's3':
-        data_module = S3DataModule(config.data['data_params'])
-    else:
-        data_module = CsvDataModule(config.data['data_params'])
+    data_source_module = importlib.import_module(data_source_dictionary[config.data['data']][0])
+    data_source = getattr(data_source_module, data_source_dictionary[config.data['data']][1])
+    data_module = data_source(config.data['data_params'])
 
     # Create LightningModule
     model = DTSModel(config.model, device)

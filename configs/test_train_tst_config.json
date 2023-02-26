@@ -1,0 +1,44 @@
+{
+    "data": {
+        "data": "csv",
+        "data_params": {
+            "dataset": "tst",
+            "num_feature": 5,
+            "enc_seq_len": 30,
+            "dec_seq_len": 5,
+            "tgt_seq_len": 5,
+            "batch_size": 32,
+            "train_path": "data/QQQ_train.csv",
+            "val_path": "data/QQQ_val.csv",
+            "test_path": "data/QQQ_test.csv"
+        }
+    },
+    "model": {
+        "model_name": "tst",
+        "model_params": {
+            "input_size": 5,
+            "enc_seq_len": 30,
+            "dec_seq_len": 5,
+            "out_seq_len": 5,
+            "dim_val": 512,
+            "n_encoder_layers": 4,
+            "n_decoder_layers": 4,
+            "n_heads": 8,
+            "dropout_encoder": 0.2,
+            "dropout_decoder": 0.2,
+            "dropout_pos_enc": 0.1,
+            "dim_feedforward_encoder": 2048,
+            "dim_feedforward_decoder": 2048,
+            "num_predicted_features": 1,
+            "lr": 1e-4
+        },
+        "loss_fn_type": "mse",
+        "loss_params": {}
+    },
+    "train": {
+        "accelerator": "gpu",
+        "devices": 1,
+        "strategy": "ddp",
+        "max_epochs": 1
+    }
+}

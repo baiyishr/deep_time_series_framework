@@ -2,6 +2,7 @@
     "data": {
         "data": "csv",
         "data_params": {
+            "dataset": "rnn",
             "num_feature": 5,
             "seq_len": 30,
             "tgt_len": 1,

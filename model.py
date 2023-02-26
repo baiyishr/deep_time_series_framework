@@ -2,20 +2,7 @@
 import importlib
 import torch
 import pytorch_lightning as pl
-
-
-model_dictionary = {
-    'custom_rnn': ['models.custom_rnn', 'CustomRNN'],
-    'customrnn': ['models.custom_rnn', 'CustomRNN'],
-    'tst': ['models.time_series_transformer', 'TSTModel'],
-    'TST': ['models.time_series_transformer', 'TSTModel'],
-}
-
-loss_dictionary = {
-    'mse': ['loss.loss', 'MSE'],
-    'MSE': ['loss.loss', 'MSE'],
-    'cross_entropy': ['loss.loss', 'CrossEntropy'],
-}
+from utils import model_dictionary, loss_dictionary
 
 
 class DTSModel(pl.LightningModule):

@@ -1,10 +1,11 @@
+import importlib
 from typing import Optional
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
 from pytorch_lightning import LightningDataModule
-import numpy as np
-import torch
 from sklearn.preprocessing import StandardScaler,MinMaxScaler
+from utils import dataset_map
+
 
 class CsvDataModule(LightningDataModule):
     def __init__(self, config):
@@ -13,8 +14,9 @@ class CsvDataModule(LightningDataModule):
         self.val_data = pd.read_csv(self.config["val_path"]).values
         self.test_data = pd.read_csv(self.config["test_path"]).values
 
-        # Define data transforms
-        self.transform = None
+        # Define dataset
+        module = importlib.import_module(dataset_map[config["dataset"]][0])
+        self.dataset = getattr(module, dataset_map[config["dataset"]][1])
 
         # normalization
         self.input_scaler = StandardScaler() #MinMaxScaler(feature_range=(-1, 1))
@@ -22,21 +24,20 @@ class CsvDataModule(LightningDataModule):
         self.target_scaler = StandardScaler() #MinMaxScaler(feature_range=(-1, 1))
         self.target_scaler.fit(self.train_data[:, 4].reshape(-1, 1))
 
-
     def train_dataloader(self):
         # Create PyTorch dataset for training data
-        train_dataset = CsvDataset(
-            self.train_data, self.config["seq_len"], self.config["tgt_len"], 
+        train_dataset = self.dataset(
+            self.train_data, self.config, 
             self.input_normalize,self.target_normalize)
 
         # Create PyTorch dataloader for training data
         return DataLoader(
-            train_dataset, batch_size=self.config["batch_size"], num_workers=4, shuffle=True)
+            train_dataset, batch_size=self.config["batch_size"], num_workers=4, shuffle=False)
 
     def val_dataloader(self):
         # Create PyTorch dataset for val data
-        val_dataset = CsvDataset(
-            self.val_data, self.config["seq_len"], self.config["tgt_len"], 
+        val_dataset = self.dataset(
+            self.val_data, self.config, 
             self.input_normalize,self.target_normalize)
 
         # Create PyTorch dataloader for test data
@@ -45,8 +46,8 @@ class CsvDataModule(LightningDataModule):
 
     def test_dataloader(self):
         # Create PyTorch dataset for test data
-        test_dataset = CsvDataset(
-            self.test_data, self.config["seq_len"], self.config["tgt_len"], 
+        test_dataset = self.dataset(
+            self.test_data, self.config, 
             self.input_normalize,self.target_normalize)
 
         # Create PyTorch dataloader for test data
@@ -77,29 +78,3 @@ class CsvDataModule(LightningDataModule):
         return x
 
 
-class CsvDataset(Dataset):
-    def __init__(self, data, seq_len, tgt_len, input_transform=None, target_transform=None):
-        self.data = data
-        self.seq_len = seq_len
-        self.tgt_len = tgt_len
-        self.input_transform = input_transform
-        self.target_transform = target_transform
-
-    def __len__(self):
-        return len(self.data) - self.seq_len
-
-    def __getitem__(self, idx):
-        # [seq_len, num_features]
-        x = self.data[idx: idx+self.seq_len, 1:6].astype(float)
-        # [tgt_len, close price]
-        y = self.data[idx+self.seq_len: idx +
-                      self.seq_len+self.tgt_len, 4].astype(float)
-        
-
-        if self.input_transform:
-            x = self.input_transform(x)
-        if self.target_transform:
-            y = self.target_transform(y)
-        #y = y_[:, 3]
-
-        return x, y
