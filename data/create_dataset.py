@@ -14,6 +14,7 @@ df = YahooDownloader(start_date = TRAIN_START_DATE,
                      end_date = TEST_END_DATE,
                      ticker_list = ticker_list).fetch_data()
 
+df['volume'] = df['volume']/1000000.0
 
 train = df[(df.date <= TRAIN_END_DATE)].drop(columns=['day'])
 val = df[(df.date >= VAL_START_DATE) & (df.date <= VAL_END_DATE)].drop(columns=['day'])

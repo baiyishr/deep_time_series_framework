@@ -45,7 +45,7 @@ def train(config):
         strategy=config.train['strategy'],
         max_epochs=config.train['max_epochs'],
         callbacks=[
-            EarlyStopping(monitor='val_loss'),
+            EarlyStopping(monitor='val_loss',patience=5,verbose=False, mode='min'),
             LearningRateMonitor(logging_interval='step'),
             checkpoint_callback
         ],

@@ -2,6 +2,7 @@
     "data": {
         "data": "csv",
         "data_params": {
+            "normalize": 0,
             "dataset": "tst",
             "num_feature": 5,
             "enc_seq_len": 30,

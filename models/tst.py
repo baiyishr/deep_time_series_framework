@@ -52,7 +52,7 @@ class TSTModel(pl.LightningModule):
         
         self.linear_mapping = nn.Linear(
             in_features=params['dim_val'], 
-            out_features=params['out_seq_len']   #['num_predicted_features']
+            out_features=params['num_predicted_features']
             )
 
         # Create positional encoder
@@ -108,16 +108,16 @@ class TSTModel(pl.LightningModule):
         
         Args:
             enc: [batch_size, enc_seq_len, num_features]
-            dec: [batch_size, tgt_seq_len, num_features]
+            dec: [batch_size, dec_seq_len, num_features]
             enc_mask: the mask for the enc sequence to prevent the model from 
                       using data points from the target sequence
             dec_mask: the mask for the dec sequence to prevent the model from
                       using data points from the target sequence
         """
-        enc, dec,  = inputs 
+        enc, dec  = inputs 
 
         # Pass throguh the input layer right before the encoder
-        enc = self.encoder_input_layer(enc) # [batch_size, enc_seq_len, dim_val] regardless of number of input features
+        enc = self.encoder_input_layer(enc.to(torch.float32)) # [batch_size, enc_seq_len, dim_val] regardless of number of input features
 
         # Pass through the positional encoding layer
         enc = self.positional_encoding_layer(enc) # shape: [batch_size, enc_seq_len, dim_val] regardless of number of input features
@@ -132,7 +132,7 @@ class TSTModel(pl.LightningModule):
             )
 
         # Pass decoder input through decoder input layer
-        decoder_output = self.decoder_input_layer(dec) # [batch_size, dec_seq_len, dim_val] regardless of number of input features
+        decoder_output = self.decoder_input_layer(dec.to(torch.float32)) # [batch_size, dec_seq_len, dim_val] regardless of number of input features
 
         #if src_mask is not None:
             #print("From model.forward(): Size of src_mask: {}".format(src_mask.size()))
@@ -150,7 +150,7 @@ class TSTModel(pl.LightningModule):
         # Pass through linear mapping
         decoder_output = self.linear_mapping(decoder_output) # shape [batch_size, out_seq_len], 1 feature
 
-        return decoder_output
+        return decoder_output.squeeze()
 
 
 class PositionalEncoder(nn.Module):

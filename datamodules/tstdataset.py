@@ -32,14 +32,24 @@ class TSTDataset(Dataset):
         2) dec (the decoder input)
         3) tgt (the target)
         """
-        # For example: enc[0:30,1:6], dec[29:34,1:6], tgt[30:35,4]
+        # # For example: enc[0:30,1:6], dec[29:34,1:6], tgt[30:35,4]
+        # enc = self.data[idx: idx+self.enc_seq_len, 
+        #                 1:6].astype(float)
+        # dec = self.data[idx+self.enc_seq_len-1 : 
+        #                 idx+self.enc_seq_len+self.dec_seq_len-1, 
+        #                 1:6].astype(float)
+        # tgt = self.data[idx+self.enc_seq_len+self.dec_seq_len-self.tgt_seq_len : 
+        #                 idx+self.enc_seq_len+self.tgt_seq_len
+        #                 , 4].astype(float)
+
+        # try more overlap: enc[0:30,1:6], dec[26:31,1:6], tgt[27:32,4]
         enc = self.data[idx: idx+self.enc_seq_len, 
                         1:6].astype(float)
-        dec = self.data[idx+self.enc_seq_len-1 : 
-                        idx+self.enc_seq_len+self.dec_seq_len-1, 
+        dec = self.data[idx+self.enc_seq_len-self.dec_seq_len+1 : 
+                        idx+self.enc_seq_len+1, 
                         1:6].astype(float)
-        tgt = self.data[idx+self.enc_seq_len+self.dec_seq_len-self.tgt_seq_len : 
-                        idx+self.enc_seq_len+self.tgt_seq_len
+        tgt = self.data[idx+self.enc_seq_len+2-self.tgt_seq_len : 
+                        idx+self.enc_seq_len+2
                         , 4].astype(float)
 
         if self.input_transform:
@@ -49,4 +59,4 @@ class TSTDataset(Dataset):
             tgt = self.target_transform(tgt.reshape(-1, 1)).squeeze(1)
 
 
-        return enc, dec, tgt
+        return (enc, dec), tgt

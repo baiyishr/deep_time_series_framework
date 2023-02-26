@@ -3,7 +3,7 @@ import importlib
 import torch
 import pytorch_lightning as pl
 from utils import model_dictionary, loss_dictionary
-
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 class DTSModel(pl.LightningModule):
     def __init__(self, config, device):
@@ -54,4 +54,10 @@ class DTSModel(pl.LightningModule):
         
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(),lr=self.model_params['lr'])
-        return optimizer
+        scheduler = ReduceLROnPlateau(
+            optimizer, 
+            mode='min', 
+            factor=0.5, 
+            patience=10, 
+            verbose=True)
+        return {'optimizer': optimizer, 'lr_scheduler': scheduler, 'monitor': 'val_loss'}

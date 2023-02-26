@@ -13,32 +13,38 @@ class CsvDataModule(LightningDataModule):
         self.train_data = pd.read_csv(self.config["train_path"]).values
         self.val_data = pd.read_csv(self.config["val_path"]).values
         self.test_data = pd.read_csv(self.config["test_path"]).values
+        self.normalize = config['normalize']
 
         # Define dataset
         module = importlib.import_module(dataset_map[config["dataset"]][0])
         self.dataset = getattr(module, dataset_map[config["dataset"]][1])
 
         # normalization
-        self.input_scaler = StandardScaler() #MinMaxScaler(feature_range=(-1, 1))
-        self.input_scaler.fit(self.train_data[:, 1:6])
-        self.target_scaler = StandardScaler() #MinMaxScaler(feature_range=(-1, 1))
-        self.target_scaler.fit(self.train_data[:, 4].reshape(-1, 1))
+        if self.normalize:
+            self.input_scaler = MinMaxScaler(feature_range=(-1, 1))
+            self.input_scaler.fit(self.train_data[:, 1:6])
+            self.target_scaler = MinMaxScaler(feature_range=(-1, 1))
+            self.target_scaler.fit(self.train_data[:, 4].reshape(-1, 1))
 
     def train_dataloader(self):
         # Create PyTorch dataset for training data
-        train_dataset = self.dataset(
-            self.train_data, self.config, 
-            self.input_normalize,self.target_normalize)
+        train_dataset = (
+            self.dataset(self.train_data, self.config, self.input_normalize,self.target_normalize) 
+            ) if self.normalize else (
+                self.dataset(self.train_data, self.config)
+            )
 
         # Create PyTorch dataloader for training data
         return DataLoader(
-            train_dataset, batch_size=self.config["batch_size"], num_workers=4, shuffle=False)
+            train_dataset, batch_size=self.config["batch_size"], num_workers=4, shuffle=True)
 
     def val_dataloader(self):
         # Create PyTorch dataset for val data
-        val_dataset = self.dataset(
-            self.val_data, self.config, 
-            self.input_normalize,self.target_normalize)
+        val_dataset = (
+            self.dataset(self.val_data, self.config, self.input_normalize,self.target_normalize) 
+            ) if self.normalize else (
+                self.dataset(self.val_data, self.config)
+            )
 
         # Create PyTorch dataloader for test data
         return DataLoader(
@@ -46,9 +52,11 @@ class CsvDataModule(LightningDataModule):
 
     def test_dataloader(self):
         # Create PyTorch dataset for test data
-        test_dataset = self.dataset(
-            self.test_data, self.config, 
-            self.input_normalize,self.target_normalize)
+        test_dataset = (
+            self.dataset(self.test_data, self.config, self.input_normalize,self.target_normalize) 
+            ) if self.normalize else (
+                self.dataset(self.test_data, self.config)
+            )
 
         # Create PyTorch dataloader for test data
         return DataLoader(
