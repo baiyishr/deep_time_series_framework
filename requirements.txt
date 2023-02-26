@@ -1,0 +1,7 @@
+pytorch_lightning
+pandas
+pyhive
+thrift
+mysql-connector-python
+boto3
+tensorboard
