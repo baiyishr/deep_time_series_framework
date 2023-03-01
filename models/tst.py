@@ -29,10 +29,6 @@ class TSTModel(pl.LightningModule):
             dim_feedforward_decoder: int, number of neurons in the linear layer 
                                      of the decoder
             num_predicted_features: int, the number of features you want to predict.
-                                    Most of the time, this will be 1 because we're
-                                    only forecasting FCR-N prices in DK2, but in
-                                    we wanted to also predict FCR-D with the same
-                                    model, num_predicted_features should be 2.
         """
 
         super().__init__() 
@@ -61,8 +57,6 @@ class TSTModel(pl.LightningModule):
             dropout=params['dropout_pos_enc']
             )
 
-        # The encoder layer used in the paper is identical to the one used by
-        # Vaswani et al (2017) on which the PyTorch module is based.
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=params['dim_val'], 
             nhead=params['n_heads'],
@@ -71,11 +65,6 @@ class TSTModel(pl.LightningModule):
             batch_first=True
             )
 
-        # Stack the encoder layers in nn.TransformerDecoder
-        # It seems the option of passing a normalization instance is redundant
-        # in my case, because nn.TransformerEncoderLayer per default normalizes
-        # after each sub-layer
-        # (https://github.com/pytorch/pytorch/issues/24930).
         self.encoder = nn.TransformerEncoder(
             encoder_layer=encoder_layer,
             num_layers=params['n_encoder_layers'], 
@@ -90,11 +79,6 @@ class TSTModel(pl.LightningModule):
             batch_first=True
             )
 
-        # Stack the decoder layers in nn.TransformerDecoder
-        # It seems the option of passing a normalization instance is redundant
-        # in my case, because nn.TransformerDecoderLayer per default normalizes
-        # after each sub-layer
-        # (https://github.com/pytorch/pytorch/issues/24930).
         self.decoder = nn.TransformerDecoder(
             decoder_layer=decoder_layer,
             num_layers=params['n_decoder_layers'], 
@@ -109,10 +93,8 @@ class TSTModel(pl.LightningModule):
         Args:
             enc: [batch_size, enc_seq_len, num_features]
             dec: [batch_size, dec_seq_len, num_features]
-            enc_mask: the mask for the enc sequence to prevent the model from 
-                      using data points from the target sequence
-            dec_mask: the mask for the dec sequence to prevent the model from
-                      using data points from the target sequence
+            enc_mask: the encoder mask
+            dec_mask: the decoder mask 
         """
         enc, dec  = inputs 
 
@@ -122,22 +104,11 @@ class TSTModel(pl.LightningModule):
         # Pass through the positional encoding layer
         enc = self.positional_encoding_layer(enc) # shape: [batch_size, enc_seq_len, dim_val] regardless of number of input features
 
-        # Pass through all the stacked encoder layers in the encoder
-        # Masking is only needed in the encoder if input sequences are padded
-        # which they are not in this time series use case, because all my
-        # input sequences are naturally of the same length. 
-        # (https://github.com/huggingface/transformers/issues/4083)
-        enc = self.encoder( # shape: [batch_size, enc_seq_len, dim_val]
-            src=enc
-            )
-
+        # no mask here
+        enc = self.encoder(src=enc) # shape: [batch_size, enc_seq_len, dim_val]
+        
         # Pass decoder input through decoder input layer
         decoder_output = self.decoder_input_layer(dec.to(torch.float32)) # [batch_size, dec_seq_len, dim_val] regardless of number of input features
-
-        #if src_mask is not None:
-            #print("From model.forward(): Size of src_mask: {}".format(src_mask.size()))
-        #if tgt_mask is not None:
-            #print("From model.forward(): Size of tgt_mask: {}".format(tgt_mask.size()))
 
         # Pass throguh decoder - output shape: [batch_size, dec seq len, dim_val]
         decoder_output = self.decoder(
@@ -176,11 +147,8 @@ class PositionalEncoder(nn.Module):
         """
 
         super().__init__()
-
-        self.d_model = d_model
-        
+        self.d_model = d_model 
         self.dropout = nn.Dropout(p=dropout)
-
         self.batch_first = batch_first
 
         # adapted from PyTorch tutorial
@@ -189,16 +157,12 @@ class PositionalEncoder(nn.Module):
         div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
         
         if self.batch_first:
-            pe = torch.zeros(1, max_seq_len, d_model)
-            
-            pe[0, :, 0::2] = torch.sin(position * div_term)
-            
+            pe = torch.zeros(1, max_seq_len, d_model)  
+            pe[0, :, 0::2] = torch.sin(position * div_term)    
             pe[0, :, 1::2] = torch.cos(position * div_term)
         else:
             pe = torch.zeros(max_seq_len, 1, d_model)
-        
-            pe[:, 0, 0::2] = torch.sin(position * div_term)
-        
+            pe[:, 0, 0::2] = torch.sin(position * div_term)    
             pe[:, 0, 1::2] = torch.cos(position * div_term)
         
         self.register_buffer('pe', pe)
