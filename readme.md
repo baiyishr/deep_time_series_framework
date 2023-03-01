@@ -1,5 +1,5 @@
 
-## Deep Time Series Framework - Pytorch Lightning
+## Deep Time Series Framework For stock price prediction- Pytorch Lightning
 
 Deep time series framework based on Pytorch Lightning
 
